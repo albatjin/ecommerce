@@ -120,3 +120,4 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOi...
 1. **React 19 호환성**: peerDependencies가 React 19를 지원하는지 확인.
 2. **번들 크기 및 트리쉐이킹**: 가급적 모듈러한 패키지(예: `lodash` 대신 `es-toolkit` 또는 바닐라 TS)를 선택.
 3. **패키지 매니저 준수**: 항상 `npm install <package>` 명령어로 설치하여 `package-lock.json`을 단일하게 유지.
+

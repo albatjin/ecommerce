@@ -115,3 +115,4 @@ export async function createProductAction(formData: FormData) {
 | **Server Action** | 클라이언트 입력값 검증과 인증 체크가 누락되지 않았는가? |
 | **에러 및 로딩** | `loading.tsx`와 `error.tsx` 또는 `Suspense` 처리가 적절히 구성되었는가? |
 | **Next/Image** | `<img>` 대신 `<Image />`를 사용하고 레이아웃 시프트(CLS)를 방지했는가? |
+

@@ -145,3 +145,4 @@ src/
 - **DB 직접 호출 금지**: UI 컴포넌트 내부에서 `supabase.from()`을 직접 호출하지 마십시오.
 - **도메인 독립성 준수**: `domain` 디렉터리 내 파일에서 외부 프레임워크 패키지(예: `@supabase/*`, `next/*`, `react`)를 import하지 마십시오.
 - **단일 책임 준수**: 하나의 Use Case 파일은 하나의 명확한 작업(예: `CreateProductUseCase`, `UpdateOrderStatusUseCase`)만 수행하도록 분리합니다.
+

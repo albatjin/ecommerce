@@ -125,3 +125,4 @@ npm run test:e2e       # Playwright E2E 테스트 실행
 4. [Coverage]: 라인/브랜치 커버리지 80% 이상을 달성하십시오.
 5. [Verification & RCA]: 실패하는 테스트가 있다면 상세 원인을 분석하고 해결한 뒤 전체 테스트 결과를 보고하십시오.
 ```
+

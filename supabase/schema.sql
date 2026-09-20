@@ -590,3 +590,4 @@ create policy "Anyone can read store settings"
 create policy "Only admins can update store settings"
   on public.store_settings for update
   using (public.is_admin());
+
