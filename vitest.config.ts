@@ -23,7 +23,10 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.{ts,tsx}',
         'src/**/*.d.ts',
-        'src/app/**', // App router pages/layouts
+        'src/app/**',
+        'src/middleware.ts',
+        'src/shared/lib/supabase/**',
+        'src/**/repositories/*.ts', // Interface-only files
       ],
     },
   },
@@ -33,4 +36,3 @@ export default defineConfig({
     },
   },
 });
-
