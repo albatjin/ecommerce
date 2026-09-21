@@ -111,5 +111,55 @@ describe('Product Entity (Unit Test)', () => {
       });
     }).toThrow('재고는 0개 이상이어야 합니다.');
   });
+
+  it('카테고리, 이미지URL, 등록일 및 재고 상태 라벨을 올바르게 반환한다', () => {
+    const normalProduct = new Product({
+      id: 'prod-4',
+      productCode: 'PROD-10004',
+      name: '무선 블루투스 이어폰',
+      regularPrice: 150000,
+      salePrice: 129000,
+      stockQuantity: 50,
+      safetyStock: 10,
+      status: 'ACTIVE',
+      category: '전자제품',
+      imageUrl: 'https://example.com/earphone.jpg',
+      createdAt: '2025-01-15',
+    });
+
+    expect(normalProduct.category).toBe('전자제품');
+    expect(normalProduct.imageUrl).toBe('https://example.com/earphone.jpg');
+    expect(normalProduct.createdAt).toBe('2025-01-15');
+    expect(normalProduct.stockStatus).toBe('NORMAL');
+    expect(normalProduct.stockStatusLabel).toBe('정상');
+
+    const lowStockProduct = new Product({
+      id: 'prod-5',
+      productCode: 'PROD-10005',
+      name: '유기농 사과 세트',
+      regularPrice: 30000,
+      salePrice: 28000,
+      stockQuantity: 4,
+      safetyStock: 10,
+      status: 'ACTIVE',
+      category: '식품',
+    });
+    expect(lowStockProduct.stockStatus).toBe('LOW');
+    expect(lowStockProduct.stockStatusLabel).toBe('부족');
+
+    const outOfStockProduct = new Product({
+      id: 'prod-6',
+      productCode: 'PROD-10006',
+      name: '오버사이즈 후드티',
+      regularPrice: 59000,
+      salePrice: 49000,
+      stockQuantity: 0,
+      safetyStock: 10,
+      status: 'OUT_OF_STOCK',
+      category: '의류',
+    });
+    expect(outOfStockProduct.stockStatus).toBe('OUT_OF_STOCK');
+    expect(outOfStockProduct.stockStatusLabel).toBe('품절');
+  });
 });
 

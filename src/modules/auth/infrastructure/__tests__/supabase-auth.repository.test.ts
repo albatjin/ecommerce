@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SupabaseAuthRepository } from '../supabase-auth.repository';
 import { SupabaseClient } from '@supabase/supabase-js';
