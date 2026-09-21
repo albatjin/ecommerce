@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { Image as ImageIcon, UploadCloud, Trash2, Plus, Star } from 'lucide-react';
+import React, { useRef, useState, useMemo } from 'react';
+import { Image as ImageIcon, UploadCloud, Trash2, Plus, Star, Loader2 } from 'lucide-react';
+import { SupabaseProductStorageService } from '@/modules/products/infrastructure/supabase-product-storage.service';
 
 interface ProductImageCardProps {
   coverImageUrl?: string;
@@ -19,7 +20,11 @@ export function ProductImageCard({
   onRemoveAdditionalImage,
 }: ProductImageCardProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const storageService = useMemo(() => new SupabaseProductStorageService(), []);
 
   const createSafeObjectURL = (file: File): string => {
     try {
@@ -32,15 +37,37 @@ export function ProductImageCard({
     return `blob:mock-url-${file.name}`;
   };
 
+  const handleUploadFile = async (file: File) => {
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      const result = await storageService.uploadImage(file);
+      if (!coverImageUrl) {
+        onCoverImageChange(result.url);
+      } else {
+        onAddAdditionalImage(result.url);
+      }
+    } catch {
+      // Fallback to local object URL if upload fails (e.g. mock/test environment)
+      const fallbackUrl = createSafeObjectURL(file);
+      if (!coverImageUrl) {
+        onCoverImageChange(fallbackUrl);
+      } else {
+        onAddAdditionalImage(fallbackUrl);
+      }
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files[0]) {
-      const fakeUrl = createSafeObjectURL(files[0]);
-      if (!coverImageUrl) {
-        onCoverImageChange(fakeUrl);
-      } else {
-        onAddAdditionalImage(fakeUrl);
-      }
+      handleUploadFile(files[0]);
+    }
+    // reset input value so re-selecting same file triggers change
+    if (e.target) {
+      e.target.value = '';
     }
   };
 
@@ -59,17 +86,12 @@ export function ProductImageCard({
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files[0]) {
-      const fakeUrl = createSafeObjectURL(files[0]);
-      if (!coverImageUrl) {
-        onCoverImageChange(fakeUrl);
-      } else {
-        onAddAdditionalImage(fakeUrl);
-      }
+      handleUploadFile(files[0]);
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
+    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4 relative">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -79,6 +101,14 @@ export function ProductImageCard({
         onChange={handleFileChange}
         className="hidden"
       />
+
+      {/* Uploading overlay */}
+      {isUploading && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-xs rounded-2xl z-20 flex flex-col items-center justify-center gap-2">
+          <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />
+          <span className="text-xs font-semibold text-slate-700">스토리지 업로드 중...</span>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">

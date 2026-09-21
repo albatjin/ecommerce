@@ -591,3 +591,48 @@ create policy "Only admins can update store settings"
   on public.store_settings for update
   using (public.is_admin());
 
+-- ==============================================================================
+-- 8. STORAGE BUCKETS & STORAGE POLICIES
+-- ==============================================================================
+
+-- Create 'product-images' bucket for catalog photos
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'product-images',
+  'product-images',
+  true,
+  5242880, -- 5MB
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+on conflict (id) do update set
+  public = true,
+  file_size_limit = 5242880,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
+-- Storage RLS Policies
+create policy "Public Access to Product Images"
+  on storage.objects for select
+  using (bucket_id = 'product-images');
+
+create policy "Allow Upload to Product Images"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'product-images'
+    and (auth.role() = 'authenticated' or auth.role() = 'anon' or public.is_admin())
+  );
+
+create policy "Allow Update to Product Images"
+  on storage.objects for update
+  using (
+    bucket_id = 'product-images'
+    and (auth.role() = 'authenticated' or auth.role() = 'anon' or public.is_admin())
+  );
+
+create policy "Allow Delete to Product Images"
+  on storage.objects for delete
+  using (
+    bucket_id = 'product-images'
+    and (auth.role() = 'authenticated' or auth.role() = 'anon' or public.is_admin())
+  );
+
+
