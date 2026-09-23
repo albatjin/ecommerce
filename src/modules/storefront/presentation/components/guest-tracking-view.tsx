@@ -43,8 +43,9 @@ export function GuestTrackingView() {
       } else {
         setErrorMessage(res.error || '주문 정보를 찾을 수 없습니다.');
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || '조회 중 오류가 발생했습니다.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '조회 중 오류가 발생했습니다.';
+      setErrorMessage(message);
     } finally {
       setIsLoading(false);
     }

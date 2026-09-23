@@ -28,6 +28,11 @@ describe('Header Component (Integration Test)', () => {
     // 알림 카운트
     expect(screen.getByText('3')).toBeInTheDocument();
 
+    // 쇼핑몰 바로가기 링크
+    const mallLink = screen.getByRole('link', { name: /쇼핑몰 바로가기/i });
+    expect(mallLink).toBeInTheDocument();
+    expect(mallLink).toHaveAttribute('href', '/');
+
     // 로그아웃 버튼
     expect(screen.getByTitle('로그아웃')).toBeInTheDocument();
   });

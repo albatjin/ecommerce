@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { StoreProductDto } from '../../application/dto/store-product.dto';
-import { useCart } from '../context/cart-context';
+import { useOptionalCart } from '../context/cart-context';
 import { ShoppingBag, Eye, Check } from 'lucide-react';
 
 interface StoreProductCardProps {
@@ -15,13 +15,8 @@ export function StoreProductCard({ product, onAddToCart }: StoreProductCardProps
   const isSoldOut = product.isSoldOut;
   const [addedFeedback, setAddedFeedback] = React.useState(false);
 
-  // useCart 안전하게 참조
-  let cartContext: ReturnType<typeof useCart> | null = null;
-  try {
-    cartContext = useCart();
-  } catch {
-    cartContext = null;
-  }
+  // useCart 안전하게 참조 (Rules of Hooks 준수)
+  const cartContext = useOptionalCart();
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();

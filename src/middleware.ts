@@ -1,11 +1,24 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession } from '@/shared/lib/supabase/middleware';
 
+/**
+ * 보안 강화 응답 헤더 설정
+ */
+function applySecurityHeaders(res: NextResponse): NextResponse {
+  res.headers.set('X-Frame-Options', 'DENY');
+  res.headers.set('X-Content-Type-Options', 'nosniff');
+  res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.headers.set('X-XSS-Protection', '1; mode=block');
+  res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  return res;
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const { response, user } = await updateSession(request);
 
-  const isAuthRoute = pathname.startsWith('/login');
+  const isAdminAuthRoute = pathname.startsWith('/admin/login');
+  const isCustomerAuthRoute = pathname === '/login' || pathname === '/signup';
 
   // 관리자 대시보드 전용 보호 경로
   const adminRoutes = [
@@ -21,21 +34,41 @@ export async function middleware(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  // 1. 이미 로그인된 사용자가 /login 에 접근할 때만 /dashboard 로 리다이렉트
-  if (user && isAuthRoute) {
-    const dashboardUrl = new URL('/dashboard', request.url);
-    return NextResponse.redirect(dashboardUrl);
+  // 1. 이미 로그인된 사용자가 관리자 로그인(/admin/login)에 접근할 때
+  if (user && isAdminAuthRoute) {
+    const role = user.user_metadata?.role ?? user.app_metadata?.role ?? 'admin';
+    const redirectTarget = role === 'customer' ? '/unauthorized' : '/dashboard';
+    const redirectUrl = new URL(redirectTarget, request.url);
+    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
   }
 
-  // 2. 비로그인 사용자가 관리자 전용 경로에 접근할 경우 /login 으로 리다이렉트
+  // 2. 이미 로그인된 사용자가 일반 고객 로그인(/login) 또는 회원가입(/signup)에 접근할 때
+  if (user && isCustomerAuthRoute) {
+    const role = user.user_metadata?.role ?? user.app_metadata?.role ?? 'customer';
+    const redirectTarget = role === 'customer' ? '/' : '/dashboard';
+    const redirectUrl = new URL(redirectTarget, request.url);
+    return applySecurityHeaders(NextResponse.redirect(redirectUrl));
+  }
+
+  // 3. 비로그인 사용자가 관리자 전용 경로에 접근할 경우 /admin/login 으로 리다이렉트
   if (!user && isProtectedAdminRoute) {
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = new URL('/admin/login', request.url);
     loginUrl.searchParams.set('redirectTo', pathname);
-    return NextResponse.redirect(loginUrl);
+    return applySecurityHeaders(NextResponse.redirect(loginUrl));
   }
 
-  // 3. 쇼핑몰 공개 경로 (/, /shop, /cart 등)는 로그인 여부와 관계없이 자유롭게 통과
-  return response;
+  // 4. 일반 고객(customer)이 관리자 전용 경로에 접근할 경우 /unauthorized 로 차단
+  if (user && isProtectedAdminRoute) {
+    const role = user.user_metadata?.role ?? user.app_metadata?.role ?? 'admin';
+    if (role === 'customer') {
+      const unauthorizedUrl = new URL('/unauthorized', request.url);
+      unauthorizedUrl.searchParams.set('from', pathname);
+      return applySecurityHeaders(NextResponse.redirect(unauthorizedUrl));
+    }
+  }
+
+  // 5. 쇼핑몰 공개 경로 (/, /shop, /cart, /mypage, /track 등)는 보안 헤더와 함께 통과
+  return applySecurityHeaders(response);
 }
 
 export const config = {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { AtSign, Lock, Eye, EyeOff, ShieldCheck, ArrowRight, AlertTriangle, AlertCircle } from 'lucide-react';
 import { LoginUseCase } from '../../application/use-cases/login.usecase';
@@ -89,12 +90,49 @@ export function LoginForm({ loginUseCase }: LoginFormProps) {
             className="mt-5 p-3.5 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-rose-700 text-xs animate-shake"
           >
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-            <span className="font-medium leading-relaxed">{errorMessage}</span>
+            <div className="space-y-1">
+              <span className="font-medium leading-relaxed block">{errorMessage}</span>
+              {errorMessage.includes('Rate limit') && (
+                <p className="text-[11px] text-rose-600 mt-1">
+                  💡 Supabase 무료 이메일 전송 제한이 걸렸을 때는 아래 <strong>빠른 테스트 계정</strong>을 사용하시면 인증 메일 없이 즉시 로그인할 수 있습니다.
+                </p>
+              )}
+            </div>
           </div>
         )}
 
+        {/* Quick Demo Fill Buttons */}
+        <div className="mt-4 p-3 bg-gray-50 border border-gray-100 rounded-xl">
+          <p className="text-[11px] font-bold text-gray-700 mb-2 flex items-center justify-between">
+            <span>🚀 빠른 테스트 계정 입력:</span>
+            <span className="text-[10px] text-gray-400 font-normal">원클릭 자동 채우기</span>
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('admin@commercehub.co.kr');
+                setPassword('admin1234!');
+              }}
+              className="py-1.5 px-2 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-lg text-xs font-semibold text-gray-700 transition-colors text-center cursor-pointer"
+            >
+              관리자 (Admin)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('customer@example.com');
+                setPassword('customer1234!');
+              }}
+              className="py-1.5 px-2 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-lg text-xs font-semibold text-gray-700 transition-colors text-center cursor-pointer"
+            >
+              일반 고객 (Customer)
+            </button>
+          </div>
+        </div>
+
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
           {/* Email / ID */}
           <div>
             <div className="flex justify-between items-center mb-1.5">
@@ -198,6 +236,25 @@ export function LoginForm({ loginUseCase }: LoginFormProps) {
             )}
           </button>
         </form>
+
+        {/* Navigation Links */}
+        <div className="mt-5 space-y-2 text-center text-xs text-gray-500">
+          <div>
+            아직 계정이 없으신가요?{' '}
+            <Link href="/signup" className="font-bold text-indigo-600 hover:underline">
+              회원가입하기
+            </Link>
+          </div>
+          <div className="pt-2 border-t border-gray-100 flex items-center justify-center gap-3 text-xs">
+            <Link href="/login" className="text-gray-600 hover:text-indigo-600 font-medium">
+              일반 고객 로그인
+            </Link>
+            <span className="text-gray-300">|</span>
+            <Link href="/" className="text-gray-600 hover:text-indigo-600 font-medium">
+              쇼핑몰 홈으로 이동
+            </Link>
+          </div>
+        </div>
 
         {/* Security Policy Card */}
         <div className="mt-5 p-3.5 bg-rose-50/70 border border-rose-100 rounded-xl flex items-start gap-2.5">

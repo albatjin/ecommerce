@@ -16,7 +16,7 @@ export default async function DashboardLayout({
 
   // Redirect unauthenticated user
   if (!user) {
-    redirect('/login');
+    redirect('/admin/login');
   }
 
   // Logout server action
@@ -24,7 +24,7 @@ export default async function DashboardLayout({
     'use server';
     const serverSupabase = await createClient();
     await serverSupabase.auth.signOut();
-    redirect('/login');
+    redirect('/admin/login');
   }
 
   return (

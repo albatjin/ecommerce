@@ -6,8 +6,15 @@ export interface LoginCredentials {
   rememberMe?: boolean;
 }
 
+export interface SignupCredentials {
+  email: string;
+  password: string;
+  name: string;
+}
+
 export interface IAuthRepository {
   login(credentials: LoginCredentials): Promise<AuthUser>;
+  signup(credentials: SignupCredentials): Promise<AuthUser>;
   logout(): Promise<void>;
   getCurrentUser(): Promise<AuthUser | null>;
 }

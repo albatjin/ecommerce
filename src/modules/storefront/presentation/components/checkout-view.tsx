@@ -189,8 +189,9 @@ export function CheckoutView() {
       } else {
         setErrorMessage(response.error || '주문 생성에 실패했습니다. 다시 시도해 주세요.');
       }
-    } catch (err: any) {
-      setErrorMessage(err.message || '예상치 못한 오류가 발생했습니다.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : '예상치 못한 오류가 발생했습니다.';
+      setErrorMessage(message);
     } finally {
       setIsSubmitting(false);
     }

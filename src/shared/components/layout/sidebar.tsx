@@ -10,6 +10,8 @@ import {
   BarChart3,
   Settings,
   Store,
+  ExternalLink,
+  ShoppingBag,
 } from 'lucide-react';
 
 import { usePathname } from 'next/navigation';
@@ -48,6 +50,21 @@ export function Sidebar({ currentPath }: SidebarProps) {
             <span className="font-bold text-base text-slate-900 tracking-tight">CommerceHub</span>
             <span className="block text-[10px] font-medium text-slate-400 -mt-1">ADMIN CONSOLE</span>
           </div>
+        </div>
+
+        {/* Storefront Link */}
+        <div className="px-4 pt-3 pb-1">
+          <Link
+            href="/"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50/80 hover:bg-blue-100/80 border border-blue-200/60 text-xs font-semibold text-blue-700 transition-all group shadow-2xs"
+            title="고객용 쇼핑몰 메인 홈으로 이동"
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" />
+              <span>쇼핑몰 바로가기</span>
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-blue-400 group-hover:text-blue-700 transition-colors" />
+          </Link>
         </div>
 
         {/* Navigation Menu */}

@@ -83,7 +83,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
     let addedQuantity = quantity;
     let message = `"${product.name}" 상품이 장바구니에 담겼습니다.`;
-    let success = true;
+    const success = true;
 
     setItems((prevItems) => {
       const existingIndex = prevItems.findIndex((item) => item.productId === product.id);
@@ -230,5 +230,9 @@ export function useCart() {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;
+}
+
+export function useOptionalCart() {
+  return useContext(CartContext);
 }
 

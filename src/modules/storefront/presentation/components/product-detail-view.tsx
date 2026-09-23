@@ -15,7 +15,7 @@ import {
   Share2,
 } from 'lucide-react';
 
-import { useCart } from '../context/cart-context';
+import { useOptionalCart } from '../context/cart-context';
 
 interface ProductDetailViewProps {
   product: StoreProductDto;
@@ -24,13 +24,8 @@ interface ProductDetailViewProps {
 export function ProductDetailView({ product }: ProductDetailViewProps) {
   const router = useRouter();
 
-  // useCart 안전하게 참조
-  let cartContext: ReturnType<typeof useCart> | null = null;
-  try {
-    cartContext = useCart();
-  } catch {
-    cartContext = null;
-  }
+  // useCart 안전하게 참조 (Rules of Hooks 준수)
+  const cartContext = useOptionalCart();
 
   // 이미지 갤러리 상태
   const allImages = [

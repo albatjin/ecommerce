@@ -5,9 +5,13 @@ import { createClient } from '@/shared/lib/supabase/server';
 import { SupabaseProductRepository } from '../../infrastructure/supabase-product.repository';
 import { CreateProductUseCase } from '../use-cases/create-product.usecase';
 import { CreateProductInputDto } from '../dto/product.dto';
+import { requireAdmin } from '@/modules/auth/application/guards/auth.guard';
 
 export async function createProductAction(input: CreateProductInputDto) {
   try {
+    // 관리자 권한(staff 이상) 사전 검증
+    await requireAdmin('staff');
+
     const supabase = await createClient();
     const repository = new SupabaseProductRepository(supabase);
     const useCase = new CreateProductUseCase(repository);

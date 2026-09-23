@@ -10,6 +10,7 @@ describe('LoginUseCase (Unit Test)', () => {
   beforeEach(() => {
     mockAuthRepo = {
       login: vi.fn(),
+      signup: vi.fn(),
       logout: vi.fn(),
       getCurrentUser: vi.fn(),
     };

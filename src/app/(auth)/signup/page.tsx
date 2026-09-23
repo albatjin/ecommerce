@@ -1,12 +1,12 @@
-import React, { Suspense } from 'react';
-import { CustomerLoginForm } from '@/modules/auth/presentation/components/customer-login-form';
+import React from 'react';
+import { SignupForm } from '@/modules/auth/presentation/components/signup-form';
 
 export const metadata = {
-  title: '로그인 - FRONT 쇼핑몰',
-  description: 'FRONT 쇼핑몰 계정으로 로그인하고 맞춤형 혜택과 주문 내역을 확인하세요.',
+  title: '신규 회원가입 - FRONT 쇼핑몰',
+  description: 'FRONT 쇼핑몰 회원으로 가입하고 다양한 혜택을 누리세요.',
 };
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <main className="min-h-screen w-full bg-[#f8fafc] flex flex-col justify-center items-center p-4 sm:p-6 lg:p-8 relative overflow-hidden">
       {/* Decorative gradient background blur */}
@@ -14,10 +14,9 @@ export default function LoginPage() {
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-indigo-100 rounded-full blur-3xl opacity-50 pointer-events-none" />
 
       <div className="relative z-10 w-full">
-        <Suspense fallback={<div className="text-center py-10 text-gray-400 text-sm">로딩 중...</div>}>
-          <CustomerLoginForm />
-        </Suspense>
+        <SignupForm />
       </div>
     </main>
   );
 }
+

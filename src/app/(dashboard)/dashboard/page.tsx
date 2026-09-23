@@ -1,4 +1,6 @@
 import React from 'react';
+import Link from 'next/link';
+import { Store, ExternalLink } from 'lucide-react';
 import { createClient } from '@/shared/lib/supabase/server';
 import { SupabaseDashboardRepository } from '@/modules/dashboard/infrastructure/supabase-dashboard.repository';
 import { GetDashboardSummaryUseCase } from '@/modules/dashboard/application/use-cases/get-dashboard-summary.usecase';
@@ -20,14 +22,24 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Title & Status */}
-      <div className="flex items-center justify-between">
+      {/* Page Title & Storefront Link */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">대시보드</h1>
           <p className="text-xs text-slate-500 mt-1">
             오늘의 주요 쇼핑몰 운영 현황 및 핵심 지표를 실시간으로 확인합니다.
           </p>
         </div>
+
+        <Link
+          href="/"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition-all cursor-pointer self-start sm:self-auto"
+          title="고객용 쇼핑몰 메인 홈으로 이동"
+        >
+          <Store className="w-4 h-4" />
+          <span>쇼핑몰 메인 방문</span>
+          <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+        </Link>
       </div>
 
       {/* 1. 상단 4대 핵심 지표 카드 */}

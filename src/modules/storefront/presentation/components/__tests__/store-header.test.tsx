@@ -10,8 +10,20 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+vi.mock('@/shared/lib/supabase/client', () => ({
+  createClient: vi.fn().mockReturnValue({
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: { subscription: { unsubscribe: vi.fn() } },
+      }),
+      signOut: vi.fn().mockResolvedValue({}),
+    },
+  }),
+}));
+
 describe('StoreHeader Component', () => {
-  it('로고와 카테고리 링크들을 렌더링한다', () => {
+  it('로고, 카테고리 링크, 로그인, 회원가입, 배송조회 및 장바구니를 렌더링한다', () => {
     render(<StoreHeader cartItemCount={3} />);
 
     expect(screen.getByText('FRONT')).toBeInTheDocument();
@@ -19,11 +31,12 @@ describe('StoreHeader Component', () => {
     expect(screen.getAllByText('의류')[0]).toBeInTheDocument();
     expect(screen.getAllByText('식품')[0]).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument(); // 장바구니 뱃지
-    expect(screen.getAllByRole('link', { name: /마이페이지/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /로그인/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /회원가입/i })[0]).toBeInTheDocument();
     expect(screen.getAllByRole('link', { name: /배송조회/i })[0]).toBeInTheDocument();
   });
 
-  it('검색창에 텍스트 입력 후 제출 시 /products?search=... 로 이동한다', () => {
+  it('검색창에 텍스트 입력 후 제출 시 /shop?search=... 로 이동한다', () => {
     render(<StoreHeader />);
 
     const searchInput = screen.getByPlaceholderText('어떤 상품을 찾으시나요?');

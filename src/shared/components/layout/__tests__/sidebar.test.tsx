@@ -28,6 +28,11 @@ describe('Sidebar Component (Integration Test)', () => {
 
     // 시스템 정상 상태 표시
     expect(screen.getByText('시스템 정상 가동 중')).toBeInTheDocument();
+
+    // 쇼핑몰 바로가기 링크
+    const mallLink = screen.getByRole('link', { name: /쇼핑몰 바로가기/i });
+    expect(mallLink).toBeInTheDocument();
+    expect(mallLink).toHaveAttribute('href', '/');
   });
 
   it('현재 경로인 메뉴에 파란색 활성(active) 스타일이 적용된다', () => {
