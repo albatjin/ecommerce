@@ -270,6 +270,48 @@ export class SupabaseProductRepository implements ProductRepository {
     return true;
   }
 
+  async getProductById(id: string): Promise<Product | null> {
+    try {
+      const { data, error } = await this.supabase
+        .from('products')
+        .select(`
+          *,
+          category:categories ( name )
+        `)
+        .or(`id.eq.${id},product_code.eq.${id}`)
+        .maybeSingle();
+
+      if (!error && data) {
+        const categoryName = (data.category as any)?.name || '기타';
+        return new Product({
+          id: data.id,
+          productCode: data.product_code,
+          name: data.name_ko,
+          nameEn: data.name_en,
+          category: categoryName,
+          regularPrice: Number(data.regular_price),
+          salePrice: Number(data.sale_price),
+          stockQuantity: Number(data.stock_quantity),
+          safetyStock: Number(data.safety_stock),
+          status: data.status,
+          imageUrl: data.cover_image_url,
+          additionalImages: data.additional_images,
+          description: data.description,
+          skuCode: data.sku_code,
+          brandName: data.brand_name,
+          taxType: data.tax_type,
+          maxOrderQuantity: data.max_order_quantity,
+          createdAt: data.created_at ? data.created_at.split('T')[0] : undefined,
+        });
+      }
+    } catch {
+      // ignore
+    }
+
+    const found = inMemoryProducts.find((p) => p.id === id || p.productCode === id);
+    return found || null;
+  }
+
   async createProduct(product: Product): Promise<Product> {
     try {
       let categoryId: string | null = null;

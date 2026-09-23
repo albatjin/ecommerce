@@ -18,6 +18,7 @@ export interface ProductQueryResult {
 
 export interface ProductRepository {
   getProducts(filter: ProductQueryFilter): Promise<ProductQueryResult>;
+  getProductById?(id: string): Promise<Product | null>;
   deleteProduct(id: string): Promise<boolean>;
   bulkDeleteProducts(ids: string[]): Promise<boolean>;
   bulkUpdateStatus?(ids: string[], status: string): Promise<boolean>;
