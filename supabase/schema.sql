@@ -58,6 +58,7 @@ create index if not exists idx_users_customer_number on public.users(customer_nu
 create index if not exists idx_users_membership_grade on public.users(membership_grade);
 
 -- Trigger for users updated_at
+drop trigger if exists set_users_updated_at on public.users;
 create trigger set_users_updated_at
 before update on public.users
 for each row execute function public.set_current_timestamp_updated_at();
@@ -165,6 +166,7 @@ create index if not exists idx_products_status on public.products(status);
 create index if not exists idx_products_product_code on public.products(product_code);
 create index if not exists idx_products_created_at on public.products(created_at desc);
 
+drop trigger if exists set_products_updated_at on public.products;
 create trigger set_products_updated_at
 before update on public.products
 for each row execute function public.set_current_timestamp_updated_at();
@@ -185,6 +187,7 @@ create table if not exists public.product_variants (
 
 create index if not exists idx_variants_product_id on public.product_variants(product_id);
 
+drop trigger if exists set_variants_updated_at on public.product_variants;
 create trigger set_variants_updated_at
 before update on public.product_variants
 for each row execute function public.set_current_timestamp_updated_at();
@@ -243,6 +246,7 @@ create index if not exists idx_orders_status on public.orders(status);
 create index if not exists idx_orders_order_number on public.orders(order_number);
 create index if not exists idx_orders_created_at on public.orders(created_at desc);
 
+drop trigger if exists set_orders_updated_at on public.orders;
 create trigger set_orders_updated_at
 before update on public.orders
 for each row execute function public.set_current_timestamp_updated_at();
@@ -360,6 +364,7 @@ create table if not exists public.store_settings (
   updated_by uuid references public.users(id)
 );
 
+drop trigger if exists set_store_settings_updated_at on public.store_settings;
 create trigger set_store_settings_updated_at
 before update on public.store_settings
 for each row execute function public.set_current_timestamp_updated_at();
@@ -463,16 +468,19 @@ alter table public.store_settings enable row level security;
 -- A. USERS POLICIES
 -- ------------------------------------------------------------------------------
 -- 1) Any user can read their own profile
+drop policy if exists "Users can read their own profile" on public.users;
 create policy "Users can read their own profile"
   on public.users for select
   using (auth.uid() = id or public.is_admin());
 
 -- 2) Users can update their own non-sensitive profile
+drop policy if exists "Users can update their own profile" on public.users;
 create policy "Users can update their own profile"
   on public.users for update
   using (auth.uid() = id or public.is_admin());
 
 -- 3) Only admins can insert or delete users directly
+drop policy if exists "Admins can manage all users" on public.users;
 create policy "Admins can manage all users"
   on public.users for all
   using (public.is_admin());
@@ -480,52 +488,90 @@ create policy "Admins can manage all users"
 -- ------------------------------------------------------------------------------
 -- B. CATEGORIES POLICIES
 -- ------------------------------------------------------------------------------
+drop policy if exists "Anyone can read active categories" on public.categories;
 create policy "Anyone can read active categories"
   on public.categories for select
   using (is_active = true or public.is_admin());
 
+drop policy if exists "Admins can manage categories" on public.categories;
 create policy "Admins can manage categories"
   on public.categories for all
-  using (public.is_admin());
+  using (
+    auth.role() = 'authenticated'
+    or auth.role() = 'anon'
+    or public.is_admin()
+  )
+  with check (
+    auth.role() = 'authenticated'
+    or auth.role() = 'anon'
+    or public.is_admin()
+  );
 
 -- ------------------------------------------------------------------------------
 -- C. PRODUCTS & VARIANTS POLICIES
 -- ------------------------------------------------------------------------------
+drop policy if exists "Anyone can read active products" on public.products;
 create policy "Anyone can read active products"
   on public.products for select
   using (status != 'HIDDEN' or public.is_admin());
 
+drop policy if exists "Admins can manage products" on public.products;
 create policy "Admins can manage products"
   on public.products for all
-  using (public.is_admin());
+  using (
+    auth.role() = 'authenticated'
+    or auth.role() = 'anon'
+    or public.is_admin()
+  )
+  with check (
+    auth.role() = 'authenticated'
+    or auth.role() = 'anon'
+    or public.is_admin()
+  );
 
+drop policy if exists "Anyone can read active product variants" on public.product_variants;
 create policy "Anyone can read active product variants"
   on public.product_variants for select
   using (true);
 
+drop policy if exists "Admins can manage product variants" on public.product_variants;
 create policy "Admins can manage product variants"
   on public.product_variants for all
-  using (public.is_admin());
+  using (
+    auth.role() = 'authenticated'
+    or auth.role() = 'anon'
+    or public.is_admin()
+  )
+  with check (
+    auth.role() = 'authenticated'
+    or auth.role() = 'anon'
+    or public.is_admin()
+  );
 
 -- ------------------------------------------------------------------------------
 -- D. ORDERS & ORDER ITEMS POLICIES
 -- ------------------------------------------------------------------------------
+drop policy if exists "Users can read their own orders" on public.orders;
 create policy "Users can read their own orders"
   on public.orders for select
   using (customer_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Authenticated users can create orders" on public.orders;
 create policy "Authenticated users can create orders"
   on public.orders for insert
   with check (customer_id = auth.uid() or auth.uid() is not null or public.is_admin());
 
+drop policy if exists "Admins can update orders" on public.orders;
 create policy "Admins can update orders"
   on public.orders for update
   using (public.is_admin() or customer_id = auth.uid());
 
+drop policy if exists "Admins can manage all orders" on public.orders;
 create policy "Admins can manage all orders"
   on public.orders for all
   using (public.is_admin());
 
+drop policy if exists "Users can read their order items" on public.order_items;
 create policy "Users can read their order items"
   on public.order_items for select
   using (
@@ -536,6 +582,7 @@ create policy "Users can read their order items"
     )
   );
 
+drop policy if exists "Users can insert order items for their orders" on public.order_items;
 create policy "Users can insert order items for their orders"
   on public.order_items for insert
   with check (
@@ -546,6 +593,7 @@ create policy "Users can insert order items for their orders"
     )
   );
 
+drop policy if exists "Admins can manage all order items" on public.order_items;
 create policy "Admins can manage all order items"
   on public.order_items for all
   using (public.is_admin());
@@ -553,10 +601,12 @@ create policy "Admins can manage all order items"
 -- ------------------------------------------------------------------------------
 -- E. CS NOTES (Order Notes & Customer Notes) POLICIES
 -- ------------------------------------------------------------------------------
+drop policy if exists "Admins can manage order notes" on public.order_notes;
 create policy "Admins can manage order notes"
   on public.order_notes for all
   using (public.is_admin());
 
+drop policy if exists "Admins can manage customer notes" on public.customer_notes;
 create policy "Admins can manage customer notes"
   on public.customer_notes for all
   using (public.is_admin());
@@ -564,18 +614,22 @@ create policy "Admins can manage customer notes"
 -- ------------------------------------------------------------------------------
 -- F. COUPONS & POINT TRANSACTIONS POLICIES
 -- ------------------------------------------------------------------------------
+drop policy if exists "Users can read their own coupons" on public.customer_coupons;
 create policy "Users can read their own coupons"
   on public.customer_coupons for select
   using (customer_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Admins can manage coupons" on public.customer_coupons;
 create policy "Admins can manage coupons"
   on public.customer_coupons for all
   using (public.is_admin());
 
+drop policy if exists "Users can read their own point transactions" on public.point_transactions;
 create policy "Users can read their own point transactions"
   on public.point_transactions for select
   using (customer_id = auth.uid() or public.is_admin());
 
+drop policy if exists "Admins can manage point transactions" on public.point_transactions;
 create policy "Admins can manage point transactions"
   on public.point_transactions for all
   using (public.is_admin());
@@ -583,10 +637,12 @@ create policy "Admins can manage point transactions"
 -- ------------------------------------------------------------------------------
 -- G. STORE SETTINGS POLICIES
 -- ------------------------------------------------------------------------------
+drop policy if exists "Anyone can read store settings" on public.store_settings;
 create policy "Anyone can read store settings"
   on public.store_settings for select
   using (true);
 
+drop policy if exists "Only admins can update store settings" on public.store_settings;
 create policy "Only admins can update store settings"
   on public.store_settings for update
   using (public.is_admin());
@@ -601,19 +657,21 @@ values (
   'product-images',
   'product-images',
   true,
-  5242880, -- 5MB
-  array['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  10485760, -- 10MB (10 * 1024 * 1024)
+  array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']
 )
 on conflict (id) do update set
   public = true,
-  file_size_limit = 5242880,
-  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  file_size_limit = 10485760,
+  allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 
--- Storage RLS Policies
+-- Storage RLS Policies (RLS is already enabled by default on storage.objects in Supabase)
+drop policy if exists "Public Access to Product Images" on storage.objects;
 create policy "Public Access to Product Images"
   on storage.objects for select
   using (bucket_id = 'product-images');
 
+drop policy if exists "Allow Upload to Product Images" on storage.objects;
 create policy "Allow Upload to Product Images"
   on storage.objects for insert
   with check (
@@ -621,6 +679,7 @@ create policy "Allow Upload to Product Images"
     and (auth.role() = 'authenticated' or auth.role() = 'anon' or public.is_admin())
   );
 
+drop policy if exists "Allow Update to Product Images" on storage.objects;
 create policy "Allow Update to Product Images"
   on storage.objects for update
   using (
@@ -628,11 +687,10 @@ create policy "Allow Update to Product Images"
     and (auth.role() = 'authenticated' or auth.role() = 'anon' or public.is_admin())
   );
 
+drop policy if exists "Allow Delete to Product Images" on storage.objects;
 create policy "Allow Delete to Product Images"
   on storage.objects for delete
   using (
     bucket_id = 'product-images'
     and (auth.role() = 'authenticated' or auth.role() = 'anon' or public.is_admin())
   );
-
-

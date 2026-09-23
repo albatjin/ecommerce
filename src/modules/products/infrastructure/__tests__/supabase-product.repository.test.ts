@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SupabaseProductRepository } from '../supabase-product.repository';
+import { SupabaseProductRepository, resetInMemoryProducts } from '../supabase-product.repository';
 
 describe('SupabaseProductRepository (Integration/Unit Test)', () => {
   let repository: SupabaseProductRepository;
 
   beforeEach(() => {
+    resetInMemoryProducts();
     // Supabase client mock (에러 발생 시 내장 시드 데이터로 fallback하거나 seed 모드로 동작)
     const mockSupabase = {
       from: vi.fn().mockReturnValue({
@@ -15,6 +16,12 @@ describe('SupabaseProductRepository (Integration/Unit Test)', () => {
         range: vi.fn().mockResolvedValue({ data: null, error: new Error('Offline fallback') }),
         delete: vi.fn().mockReturnThis(),
         in: vi.fn().mockResolvedValue({ error: null }),
+        insert: vi.fn().mockReturnValue({
+          select: vi.fn().mockReturnValue({
+            single: vi.fn().mockResolvedValue({ data: null, error: new Error('Fallback') }),
+          }),
+        }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       }),
     };
 

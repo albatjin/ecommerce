@@ -161,8 +161,19 @@ export const SEED_PRODUCTS: Product[] = [
   }),
 ];
 
+export let inMemoryProducts: Product[] = [...SEED_PRODUCTS];
+
+export function resetInMemoryProducts(): void {
+  inMemoryProducts = [...SEED_PRODUCTS];
+}
+
 export class SupabaseProductRepository implements ProductRepository {
-  private localProducts: Product[] = [...SEED_PRODUCTS];
+  get localProducts(): Product[] {
+    return inMemoryProducts;
+  }
+  set localProducts(products: Product[]) {
+    inMemoryProducts = products;
+  }
 
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -185,14 +196,11 @@ export class SupabaseProductRepository implements ProductRepository {
           cover_image_url,
           created_at,
           category:categories ( name )
-        `, { count: 'exact' });
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false });
 
       if (filter.searchQuery) {
         query = query.ilike('name_ko', `%${filter.searchQuery}%`);
-      }
-
-      if (filter.category && filter.category !== '전체') {
-        // category relationship filter
       }
 
       const from = (page - 1) * pageSize;
@@ -220,13 +228,22 @@ export class SupabaseProductRepository implements ProductRepository {
         });
       });
 
-      const totalCount = count ?? products.length;
+      // Merge any pending in-memory created products that are not yet in Supabase
+      const supabaseIds = new Set(products.map((p) => p.id));
+      const supabaseCodes = new Set(products.map((p) => p.productCode));
+      const pendingLocal = inMemoryProducts.filter(
+        (p) => !supabaseIds.has(p.id) && !supabaseCodes.has(p.productCode) && !SEED_PRODUCTS.some((s) => s.id === p.id)
+      );
+
+      const allMerged = [...pendingLocal, ...products];
+      const totalCount = (count ?? products.length) + pendingLocal.length;
+
       return {
-        products,
+        products: allMerged,
         totalCount,
         page,
         pageSize,
-        totalPages: Math.ceil(totalCount / pageSize),
+        totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
       };
     } catch {
       return this.filterInMemory(filter, page, pageSize);
@@ -239,7 +256,7 @@ export class SupabaseProductRepository implements ProductRepository {
     } catch {
       // ignore
     }
-    this.localProducts = this.localProducts.filter((p) => p.id !== id);
+    inMemoryProducts = inMemoryProducts.filter((p) => p.id !== id);
     return true;
   }
 
@@ -249,18 +266,33 @@ export class SupabaseProductRepository implements ProductRepository {
     } catch {
       // ignore
     }
-    this.localProducts = this.localProducts.filter((p) => !ids.includes(p.id));
+    inMemoryProducts = inMemoryProducts.filter((p) => !ids.includes(p.id));
     return true;
   }
 
   async createProduct(product: Product): Promise<Product> {
     try {
+      let categoryId: string | null = null;
+      if (product.category) {
+        try {
+          const { data: cat } = await this.supabase
+            .from('categories')
+            .select('id')
+            .eq('name', product.category)
+            .maybeSingle();
+          if (cat) categoryId = cat.id;
+        } catch {
+          // ignore category lookup error
+        }
+      }
+
       const { data, error } = await this.supabase
         .from('products')
         .insert({
           product_code: product.productCode,
           name_ko: product.name,
           name_en: product.nameEn,
+          category_id: categoryId,
           regular_price: product.regularPrice,
           sale_price: product.salePrice,
           stock_quantity: product.stockQuantity,
@@ -274,16 +306,20 @@ export class SupabaseProductRepository implements ProductRepository {
           tax_type: product.taxType,
           max_order_quantity: product.maxOrderQuantity,
         })
-        .select()
+        .select(`
+          *,
+          category:categories ( name )
+        `)
         .single();
 
       if (!error && data) {
+        const categoryName = (data.category as any)?.name || product.category || '기타';
         const createdProduct = new Product({
           id: data.id,
           productCode: data.product_code,
           name: data.name_ko,
           nameEn: data.name_en,
-          category: product.category,
+          category: categoryName,
           regularPrice: Number(data.regular_price),
           salePrice: Number(data.sale_price),
           stockQuantity: Number(data.stock_quantity),
@@ -298,19 +334,23 @@ export class SupabaseProductRepository implements ProductRepository {
           maxOrderQuantity: data.max_order_quantity,
           createdAt: data.created_at ? data.created_at.split('T')[0] : undefined,
         });
-        this.localProducts.unshift(createdProduct);
+        inMemoryProducts.unshift(createdProduct);
         return createdProduct;
       }
-    } catch {
-      // fallback to in-memory store
+
+      if (error) {
+        console.warn('Supabase createProduct insert error (saved to memory store):', error.message);
+      }
+    } catch (err) {
+      console.warn('Supabase createProduct exception (saved to memory store):', err);
     }
 
-    this.localProducts.unshift(product);
+    inMemoryProducts.unshift(product);
     return product;
   }
 
   private filterInMemory(filter: ProductQueryFilter, page: number, pageSize: number): ProductQueryResult {
-    let filtered = [...this.localProducts];
+    let filtered = [...inMemoryProducts];
 
     if (filter.searchQuery && filter.searchQuery.trim() !== '') {
       const q = filter.searchQuery.toLowerCase();

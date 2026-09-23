@@ -27,6 +27,7 @@ export function ProductCreateContainer() {
       });
       setTimeout(() => {
         router.push('/products');
+        router.refresh();
       }, 1200);
     } else {
       setNotification({
