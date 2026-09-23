@@ -1,65 +1,91 @@
-# E-Commerce 고객용 웹 서비스(Storefront) 3단계 구현 계획
+# E-Commerce 고객용 웹 서비스(Storefront) 4단계 구현 계획
 
-## 3단계 목표: 주문서 작성 및 결제 연동 (Checkout & Order Flow)
+## 4단계 목표: 마이페이지 (주문 내역 및 배송 추적, My Page & Order Tracking)
 
-고객이 장바구니에 담은 상품을 바탕으로 주문서(`/checkout`)를 작성하고, 배송지 및 결제 수단을 선택하여 결제를 완료하면, 실제 주문 데이터가 생성되어 **관리자 대시보드(`/orders`)의 주문 목록과 매출 통계에 즉시 실시간 반영**되는 전체 커머스 라이프사이클을 완성합니다.
+고객이 자신이 주문한 상품 내역을 확인하고, 주문 진행 상태(결제완료 → 상품준비 → 배송중 → 배송완료)를 실시간 스텝퍼로 추적하며, 배송지 정보 및 영수증을 확인할 수 있는 **마이페이지 및 배송 추적 시스템**을 구축합니다. 또한 회원 로그인 사용자뿐만 아니라 비회원 주문자도 주문번호와 연락처로 간편하게 주문 상태를 조회할 수 있는 **게스트 주문 조회(Guest Order Lookup)** 기능까지 포함합니다.
 
 ---
 
 ## User Review Required
+
 > [!IMPORTANT]
-> 1. **결제 모듈(PG)**: 실서비스 카드 승인 및 빠른 테스트를 위해 토스페이먼츠/간편결제 UI 스타일의 결제 시뮬레이션(안심 결제 프로세스)을 기본 제공하며, 실제 승인 완료 플로우를 거쳐 주문 번호가 발행됩니다.
-> 2. **관리자 대시보드 실시간 연계**: 결제가 완료되면 Supabase DB `orders` 테이블 및 주문 저장소에 주문이 즉시 등록되어, 관리자가 `/orders` 페이지를 새로고침하거나 확인할 때 신규 주문 건으로 바로 표시됩니다.
-> 3. **장바구니 자동 정리**: 주문 완료 시 장바구니에서 결제된 상품만 자동으로 삭제 처리됩니다.
+> 1. **경로 분리 및 일관성**:
+>    - 관리자 주문 관리(`/orders`)와 충돌하지 않도록, 고객용 마이페이지는 **`/mypage`** 및 **`/mypage/orders/[id]`**로 구축합니다.
+>    - 비회원도 간편하게 접근할 수 있는 간이 주문 조회 라우트 **`/track`** (주문번호 + 연락처 검색)를 지원합니다.
+> 2. **실시간 배송 진행 스텝퍼(Delivery Tracking Stepper)**:
+>    - `결제완료` → `상품준비` → `배송중` → `배송완료`의 4단계 실시간 상태 스텝퍼를 고객 화면에 미려하게 렌더링하고, 택배사(CJ대한통운, 우체국 등) 및 송장번호 복사 기능을 제공합니다.
+> 3. **헤더 바로가기 연동**:
+>    - 고객용 쇼핑몰 헤더(`store-header.tsx`)에 `마이페이지` 및 `주문조회` 내비게이션 링크를 추가하여 접근성을 높입니다.
 
 ---
 
 ## Proposed Changes
 
-### Component 1: 주문 생성 Application & Use Case
-- [MODIFY] `src/modules/orders/domain/repositories/order.repository.ts`:
-  - `createOrder(order: Order, detail: OrderDetail): Promise<Order>` 메서드 인터페이스 확장
-- [MODIFY] `src/modules/orders/infrastructure/supabase-order.repository.ts`:
-  - Supabase `orders` 테이블 INSERT 및 `localOrders`, `localOrderDetails`에 실시간 추가 구현
-- [NEW] `src/modules/storefront/application/use-cases/create-order.usecase.ts`:
-  - 주문번호 생성 (`ORD-YYYYMMDD-XXXXX`)
-  - 배송지, 주문자, 결제수단, 품목 요약 가공
-  - 주문 저장소 호출 및 생성된 주문 반환
+### Component 1: Application Layer (Use Cases & Server Actions)
+- [NEW] `src/modules/storefront/application/use-cases/get-my-orders.usecase.ts`:
+  - 고객의 주문 목록 조회 (상태, 주문일시, 결제금액, 주문명)
+- [NEW] `src/modules/storefront/application/use-cases/track-order.usecase.ts`:
+  - 주문번호(`ORD-...`) 또는 ID와 연락처를 기반으로 단건 주문 상세 및 배송 추적 정보 조회
+- [NEW] `src/modules/storefront/application/actions/tracking.actions.ts`:
+  - Next.js Server Action: 비회원 및 회원 주문 추적용 `lookupOrderAction`
 
-### Component 2: 주문서 작성 뷰 & 배송지 입력 (`/checkout`)
-- [NEW] `src/app/(store)/checkout/page.tsx`:
-  - 주문서 작성 라우트
-- [NEW] `src/modules/storefront/presentation/components/checkout-view.tsx`:
-  - **주문 상품 목록 확인**: 썸네일, 수량, 품목별 금액
-  - **배송지 정보 입력 폼**: 수령인 이름, 휴대전화 번호, 우편번호 및 주소/상세주소, 배송 요청사항 프리셋 선택
-  - **결제 수단 선택**: 신용/체크카드, 카카오페이, 토스페이, 네이버페이, 가상계좌(무통장입금)
-  - **최종 결제 금액 요약 및 결제하기 버튼**: 약관 동의 체크 및 주문 생성 실행
+---
 
-### Component 3: 주문 완료 페이지 (`/checkout/success`)
-- [NEW] `src/app/(store)/checkout/success/page.tsx`:
-  - 주문 완료 안내 라우트
-- [NEW] `src/modules/storefront/presentation/components/checkout-success-view.tsx`:
-  - 주문 완료 축하 메시지, 발급된 주문번호, 결제 수단 및 총 결제 금액, 배송지 주소 안내
-  - "관리자 콘솔에서 주문 확인하기" 및 "쇼핑 계속하기" 바로가기 버튼
+### Component 2: 마이페이지 메인 (`/mypage`)
+- [NEW] `src/app/(store)/mypage/page.tsx`:
+  - 마이페이지 라우트
+- [NEW] `src/modules/storefront/presentation/components/mypage-view.tsx`:
+  - **고객 요약 헤더**: 회원 등급(VIP), 보유 포인트, 총 주문 건수
+  - **주문/배송 목록 탭**: 주문 카드 리스트 (상품 썸네일, 주문번호, 결제금액, 배송 상태 배지, [배송조회], [상세보기] 버튼)
+  - **빈 주문 내역 안내 (Empty State)** 및 쇼핑하러 가기 CTA
 
-### Component 4: 장바구니(`cart-view.tsx`) 연동
-- [MODIFY] `src/modules/storefront/presentation/components/cart-view.tsx`:
-  - "주문하기" 버튼 클릭 시 `/checkout` 페이지로 부드럽게 네비게이션
+---
+
+### Component 3: 주문 상세 및 배송 추적 (`/mypage/orders/[id]`)
+- [NEW] `src/app/(store)/mypage/orders/[id]/page.tsx`:
+  - 주문 상세 및 배송 추적 라우트
+- [NEW] `src/modules/storefront/presentation/components/my-order-detail-view.tsx`:
+  - **실시간 배송 상태 스텝퍼**: `결제완료` → `상품준비` → `배송중(집하)` → `배송완료` 시각적 진행도 표시
+  - **운송장 정보 카드**: 택배사명, 송장번호, 원클릭 복사
+  - **주문 상품 목록**: 품목별 단가, 수량, 소계 금액
+  - **배송지 정보**: 수령인, 연락처, 주소, 배송 메모
+  - **결제 정보 요약**: 결제수단(신용카드, 카카오페이, PayPal 등), 결제 승인 일시, 최종 결제 금액
+
+---
+
+### Component 4: 비회원 주문/배송 간편 조회 (`/track`)
+- [NEW] `src/app/(store)/track/page.tsx`:
+  - 비회원 주문 조회 라우트
+- [NEW] `src/modules/storefront/presentation/components/guest-tracking-view.tsx`:
+  - 주문번호 및 연락처 입력 폼
+  - 조회 성공 시 즉시 배송 상태 스텝퍼 및 주문 정보 표시
+
+---
+
+### Component 5: 쇼핑몰 헤더 연동 (`store-header.tsx`)
+- [MODIFY] `src/modules/storefront/presentation/components/store-header.tsx`:
+  - 마이페이지(`User` 아이콘) 및 주문조회 퀵 링크 추가
 
 ---
 
 ## Verification Plan
 
 ### Automated Tests
-- [NEW] `src/modules/storefront/application/use-cases/__tests__/create-order.usecase.test.ts`:
-  - 주문번호 포맷팅, 요약문 생성, 총액 계산, 주문 저장 검증
-- [NEW] `src/modules/storefront/presentation/components/__tests__/checkout-view.test.tsx`:
-  - 필수 배송 정보 유효성 검사, 결제 수단 선택, 주문 제출 시뮬레이션 테스트
-- 전체 테스트 스위트: `npm test` (기존 262개 테스트 무결성 확인)
-- Next.js 16 프로덕션 빌드: `npm run build`
+- [NEW] `src/modules/storefront/application/use-cases/__tests__/get-my-orders.usecase.test.ts`:
+  - 주문 목록 조회 및 상태 필터링 단위 테스트
+- [NEW] `src/modules/storefront/application/use-cases/__tests__/track-order.usecase.test.ts`:
+  - 주문번호/연락처 일치 여부 검증 및 배송 추적 데이터 생성 테스트
+- [NEW] `src/modules/storefront/presentation/components/__tests__/mypage-view.test.tsx`:
+  - 마이페이지 렌더링, 주문 카드 리스트, 배송 상태 배지 검증
+- [NEW] `src/modules/storefront/presentation/components/__tests__/my-order-detail-view.test.tsx`:
+  - 배송 진행 스텝퍼 및 송장번호 복사 동작 검증
+- [NEW] `src/modules/storefront/presentation/components/__tests__/guest-tracking-view.test.tsx`:
+  - 주문번호 조회 폼 제출 및 결과 표시 검증
+- **전체 테스트 스위트**: `npm test` (기존 273개 테스트 무결성 유지)
+- **Next.js 프로덕션 빌드**: `npm run build`
 
 ### Manual Verification
-1. `http://localhost:3000/cart`에서 상품 선택 후 "주문하기" 클릭 -> `/checkout` 진입 확인
-2. 배송지(수령인, 연락처, 주소) 입력 및 결제 수단(카카오페이/신용카드) 선택 후 "결제하기" 클릭
-3. `/checkout/success` 완료 페이지로 이동하여 발급된 주문번호(`ORD-...`) 확인
-4. 관리자 대시보드 `http://localhost:3000/orders` 접속 시 방금 생성한 주문이 목록 최상단에 즉시 노출되는지 검증
+1. 쇼핑몰 헤더에서 [마이페이지] 클릭 시 `/mypage` 진입
+2. 3단계에서 결제 완료했던 주문건(`ORD-YYYYMMDD-...`)이 마이페이지 주문 목록 상단에 노출되는지 확인
+3. [상세보기] 또는 [배송조회] 클릭 시 `/mypage/orders/[id]`로 이동하여 실시간 배송 스텝퍼와 배송지/결제정보가 정확히 표시되는지 확인
+4. `/track` 페이지에서 방금 발급된 주문번호와 연락처를 입력하여 비회원 주문조회가 정상 동작하는지 확인

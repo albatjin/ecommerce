@@ -19,6 +19,8 @@ describe('StoreHeader Component', () => {
     expect(screen.getAllByText('의류')[0]).toBeInTheDocument();
     expect(screen.getAllByText('식품')[0]).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument(); // 장바구니 뱃지
+    expect(screen.getAllByRole('link', { name: /마이페이지/i })[0]).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /배송조회/i })[0]).toBeInTheDocument();
   });
 
   it('검색창에 텍스트 입력 후 제출 시 /products?search=... 로 이동한다', () => {

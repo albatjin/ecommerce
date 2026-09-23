@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingCart, Search, LayoutDashboard, Menu, X } from 'lucide-react';
+import { ShoppingCart, Search, LayoutDashboard, Menu, X, User, Truck } from 'lucide-react';
 import { useCart } from '../context/cart-context';
 
 interface StoreHeaderProps {
@@ -110,7 +110,27 @@ export function StoreHeader({ cartItemCount }: StoreHeaderProps) {
           </form>
 
           {/* 우측 아이콘 액션 */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <Link
+              href="/track"
+              className="p-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-full transition-colors flex items-center gap-1 text-xs font-medium"
+              title="배송조회"
+              aria-label="배송조회"
+            >
+              <Truck className="w-5 h-5" />
+              <span className="hidden lg:inline">배송조회</span>
+            </Link>
+
+            <Link
+              href="/mypage"
+              className="p-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-full transition-colors flex items-center gap-1 text-xs font-medium"
+              title="마이페이지"
+              aria-label="마이페이지"
+            >
+              <User className="w-5 h-5" />
+              <span className="hidden lg:inline">마이페이지</span>
+            </Link>
+
             <Link
               href="/cart"
               className="relative p-2 text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded-full transition-colors"
@@ -129,7 +149,7 @@ export function StoreHeader({ cartItemCount }: StoreHeaderProps) {
 
       {/* 모바일 메뉴 드롭다운 */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-2 pb-4 space-y-2">
+        <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-2 pb-4 space-y-3">
           <form onSubmit={handleSearch} className="mb-3">
             <div className="relative">
               <input
@@ -153,6 +173,32 @@ export function StoreHeader({ cartItemCount }: StoreHeaderProps) {
                 {cat.name}
               </Link>
             ))}
+          </div>
+          <div className="pt-3 border-t border-gray-100 flex items-center justify-around text-xs font-medium text-gray-600">
+            <Link
+              href="/track"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-1.5 py-1.5 px-3 hover:text-blue-600 rounded-md hover:bg-gray-50"
+            >
+              <Truck className="w-4 h-4" />
+              <span>배송조회</span>
+            </Link>
+            <Link
+              href="/mypage"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-1.5 py-1.5 px-3 hover:text-blue-600 rounded-md hover:bg-gray-50"
+            >
+              <User className="w-4 h-4" />
+              <span>마이페이지</span>
+            </Link>
+            <Link
+              href="/cart"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-1.5 py-1.5 px-3 hover:text-blue-600 rounded-md hover:bg-gray-50"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>장바구니 ({effectiveCartCount})</span>
+            </Link>
           </div>
         </div>
       )}
