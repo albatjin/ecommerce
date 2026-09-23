@@ -22,6 +22,7 @@ export interface OrderRepository {
   getOrders(filter: OrderQueryFilter): Promise<OrderQueryResult>;
   getOrderById(id: string): Promise<Order | null>;
   getOrderDetail(id: string): Promise<OrderDetail | null>;
+  createOrder(order: Order, detail: OrderDetail): Promise<Order>;
   updateOrderStatus(id: string, status: OrderStatus): Promise<boolean>;
   updateTrackingInfo(id: string, trackingCompany: string, trackingNumber: string): Promise<boolean>;
   addCsNote(orderId: string, author: string, content: string): Promise<OrderCsMemo>;

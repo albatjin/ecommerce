@@ -1,9 +1,15 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ProductDetailView } from '../product-detail-view';
 import { Product } from '@/modules/products/domain/entities/product';
 import { toStoreProductDto } from '../../../application/dto/store-product.dto';
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+}));
 
 describe('ProductDetailView Component', () => {
   const sampleProduct = new Product({

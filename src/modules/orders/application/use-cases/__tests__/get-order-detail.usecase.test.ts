@@ -58,6 +58,7 @@ describe('GetOrderDetailUseCase', () => {
     updateOrderStatus: vi.fn().mockResolvedValue(true),
     updateTrackingInfo: vi.fn().mockResolvedValue(true),
     addCsNote: vi.fn(),
+    createOrder: vi.fn(),
   };
 
   it('should return order detail when order exists', async () => {

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { StoreProductDto } from '../../application/dto/store-product.dto';
 import {
   ShoppingCart,
@@ -21,6 +22,8 @@ interface ProductDetailViewProps {
 }
 
 export function ProductDetailView({ product }: ProductDetailViewProps) {
+  const router = useRouter();
+
   // useCart 안전하게 참조
   let cartContext: ReturnType<typeof useCart> | null = null;
   try {
@@ -69,7 +72,10 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
   };
 
   const handleDirectBuy = () => {
-    showToast(`주문/결제 단계로 이동합니다. (총 ${(product.salePrice * quantity).toLocaleString('ko-KR')}원)`);
+    if (cartContext) {
+      cartContext.addItem(product, quantity);
+    }
+    router.push('/checkout');
   };
 
   const handleShare = async () => {

@@ -2,7 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCart } from '../context/cart-context';
+import { OrderStepper } from './order-stepper';
 import {
   ShoppingBag,
   Trash2,
@@ -15,6 +17,7 @@ import {
 } from 'lucide-react';
 
 export function CartView() {
+  const router = useRouter();
   const {
     items,
     removeItem,
@@ -36,50 +39,55 @@ export function CartView() {
   // 빈 장바구니일 때 (Empty State)
   if (items.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-        <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
-          <ShoppingBag className="w-10 h-10" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          장바구니가 비어 있습니다
-        </h2>
-        <p className="text-sm text-gray-500 max-w-md mx-auto mb-8 leading-relaxed">
-          원하는 상품을 장바구니에 담아두고 한 번에 편리하게 주문해 보세요.
-        </p>
-        <div className="flex justify-center gap-4">
-          <Link
-            href="/shop"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105"
-          >
-            인기 상품 둘러보기
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors shadow-2xs"
-          >
-            홈으로 가기
-          </Link>
+      <div className="w-full">
+        <OrderStepper currentStep={1} />
+        <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xs">
+            <ShoppingBag className="w-10 h-10" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            장바구니가 비어 있습니다
+          </h2>
+          <p className="text-sm text-gray-500 max-w-md mx-auto mb-8 leading-relaxed">
+            원하는 상품을 장바구니에 담아두고 한 번에 편리하게 주문해 보세요.
+          </p>
+          <div className="flex justify-center gap-4">
+            <Link
+              href="/shop"
+              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-6 py-3.5 rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:scale-105"
+            >
+              인기 상품 둘러보기
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors shadow-2xs"
+            >
+              홈으로 가기
+            </Link>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* 타이틀 */}
-      <div className="flex items-baseline justify-between mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
-            장바구니
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">
-            담긴 상품을 확인하고 주문서를 작성하세요. (전체 {totalItemCount}개 품목)
-          </p>
+    <div className="w-full">
+      <OrderStepper currentStep={1} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        {/* 타이틀 */}
+        <div className="flex items-baseline justify-between mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+              장바구니
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              담긴 상품을 확인하고 주문서를 작성하세요. (전체 {totalItemCount}개 품목)
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
         {/* 좌측: 장바구니 상품 목록 (8 cols) */}
         <div className="lg:col-span-8 space-y-4">
           {/* 전체 선택 및 일괄 삭제 컨트롤 바 */}
@@ -265,13 +273,15 @@ export function CartView() {
             {/* 주문하기 CTA 버튼 */}
             <button
               type="button"
-              disabled={selectedItemCount === 0}
               onClick={() => {
-                alert(`주문서 작성 페이지로 이동합니다. (결제 예정: ${finalPaymentAmount.toLocaleString('ko-KR')}원)`);
+                if (selectedItemCount === 0) {
+                  toggleSelectAll(true);
+                }
+                router.push('/checkout');
               }}
-              className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-2"
+              className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg shadow-blue-600/30 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>{selectedItemCount}개 상품 주문하기</span>
+              <span>{selectedItemCount > 0 ? `${selectedItemCount}개 상품 주문하기` : '전체 상품 주문하기'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
 
@@ -289,6 +299,7 @@ export function CartView() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
 

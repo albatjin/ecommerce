@@ -36,6 +36,7 @@ export interface CartContextType {
   shippingFee: number; // 배송비 (기본 0원)
   finalPaymentAmount: number; // 최종 결제 예정 금액
   isAllSelected: boolean;
+  isLoaded: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -215,6 +216,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         shippingFee,
         finalPaymentAmount,
         isAllSelected,
+        isLoaded,
       }}
     >
       {children}

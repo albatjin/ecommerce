@@ -30,6 +30,7 @@ describe('Order Use Cases (Unit Test)', () => {
     updateOrderStatus: vi.fn().mockResolvedValue(true),
     updateTrackingInfo: vi.fn().mockResolvedValue(true),
     addCsNote: vi.fn().mockResolvedValue({} as any),
+    createOrder: vi.fn(),
   };
 
   it('GetOrdersUseCase는 주문 목록과 오늘 처리해야 할 주문 수를 반환한다', async () => {

@@ -179,8 +179,22 @@ export const SEED_ORDER_DETAILS: Record<string, OrderDetail> = {
 };
 
 export class SupabaseOrderRepository implements OrderRepository {
-  private localOrders: Order[] = [...SEED_ORDERS];
-  private localOrderDetails: Record<string, OrderDetail> = { ...SEED_ORDER_DETAILS };
+  private static sharedOrders: Order[] = [...SEED_ORDERS];
+  private static sharedOrderDetails: Record<string, OrderDetail> = { ...SEED_ORDER_DETAILS };
+
+  private get localOrders(): Order[] {
+    return SupabaseOrderRepository.sharedOrders;
+  }
+  private set localOrders(val: Order[]) {
+    SupabaseOrderRepository.sharedOrders = val;
+  }
+
+  private get localOrderDetails(): Record<string, OrderDetail> {
+    return SupabaseOrderRepository.sharedOrderDetails;
+  }
+  private set localOrderDetails(val: Record<string, OrderDetail>) {
+    SupabaseOrderRepository.sharedOrderDetails = val;
+  }
 
   constructor(private readonly supabase: SupabaseClient) {}
 
@@ -241,6 +255,72 @@ export class SupabaseOrderRepository implements OrderRepository {
     } catch {
       return this.filterInMemory(filter, page, pageSize);
     }
+  }
+
+  async createOrder(order: Order, detail: OrderDetail): Promise<Order> {
+    try {
+      // 1. Supabase orders 테이블 삽입 시도
+      const { error: orderError } = await this.supabase
+        .from('orders')
+        .insert({
+          id: order.id,
+          order_number: order.orderNumber,
+          order_name: order.orderSummary,
+          status: order.status,
+          total_product_amount: detail.payment.totalProductAmount,
+          discount_amount: detail.payment.couponDiscount,
+          point_used: detail.payment.pointUsed,
+          shipping_fee: detail.payment.shippingFee,
+          total_paid_amount: order.paidAmount,
+          payment_method: detail.payment.paymentMethod.includes('카카오')
+            ? 'KAKAO_PAY'
+            : detail.payment.paymentMethod.includes('토스')
+            ? 'TOSS_PAY'
+            : detail.payment.paymentMethod.includes('네이버')
+            ? 'NAVER_PAY'
+            : detail.payment.paymentMethod.includes('가상계좌') || detail.payment.paymentMethod.includes('무통장')
+            ? 'VIRTUAL_ACCOUNT'
+            : 'CREDIT_CARD',
+          payment_status: order.status === 'PAID' ? 'COMPLETED' : 'PENDING',
+          payment_details: {
+            method: detail.payment.paymentMethod,
+            installment: detail.payment.installment,
+            approved_at: detail.payment.approvedAt,
+          },
+          recipient_name: detail.shipping.recipientName,
+          recipient_phone: detail.shipping.phone,
+          shipping_address: detail.shipping.address,
+          shipping_zipcode: detail.shipping.zipcode || '06236',
+          shipping_message: detail.shipping.memo || '',
+          created_at: new Date().toISOString(),
+        });
+
+      // 2. Supabase order_items 테이블 삽입 시도
+      if (!orderError && detail.items.length > 0) {
+        await this.supabase.from('order_items').insert(
+          detail.items.map((item) => ({
+            order_id: order.id,
+            product_name: item.productName,
+            variant_name: item.option || '',
+            product_image_url: item.imageUrl || '',
+            unit_price: item.unitPrice,
+            quantity: item.quantity,
+            discount_amount: item.couponDiscount || 0,
+            total_price: item.subtotal,
+            status: 'ORDERED',
+          }))
+        );
+      }
+    } catch {
+      // Supabase insert 오류 시에도 메모리 저장소에 정상 반영되도록 계속 진행
+    }
+
+    // 3. 로컬 메모리 저장소에 동기화
+    this.localOrders.unshift(order);
+    this.localOrderDetails[order.id] = detail;
+    this.localOrderDetails[order.orderNumber] = detail;
+
+    return order;
   }
 
   async getOrderById(id: string): Promise<Order | null> {

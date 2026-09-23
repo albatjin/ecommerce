@@ -5,6 +5,12 @@ import { CartView } from '../cart-view';
 import { CartProvider, useCart } from '../../context/cart-context';
 import { StoreProductDto } from '../../../application/dto/store-product.dto';
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+  }),
+}));
+
 // 카트 아이템이 미리 담긴 테스트 래퍼 컴포넌트
 function TestCartInitializer({ initialProduct }: { initialProduct: StoreProductDto }) {
   const { addItem } = useCart();
