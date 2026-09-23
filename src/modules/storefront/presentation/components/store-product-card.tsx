@@ -1,7 +1,10 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import { StoreProductDto } from '../../application/dto/store-product.dto';
-import { ShoppingBag, Eye } from 'lucide-react';
+import { useCart } from '../context/cart-context';
+import { ShoppingBag, Eye, Check } from 'lucide-react';
 
 interface StoreProductCardProps {
   product: StoreProductDto;
@@ -10,13 +13,29 @@ interface StoreProductCardProps {
 
 export function StoreProductCard({ product, onAddToCart }: StoreProductCardProps) {
   const isSoldOut = product.isSoldOut;
+  const [addedFeedback, setAddedFeedback] = React.useState(false);
+
+  // useCart 안전하게 참조
+  let cartContext: ReturnType<typeof useCart> | null = null;
+  try {
+    cartContext = useCart();
+  } catch {
+    cartContext = null;
+  }
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isSoldOut && onAddToCart) {
+    if (isSoldOut) return;
+
+    if (onAddToCart) {
       onAddToCart(product);
+    } else if (cartContext) {
+      cartContext.addItem(product, 1);
     }
+
+    setAddedFeedback(true);
+    setTimeout(() => setAddedFeedback(false), 2000);
   };
 
   const formattedSalePrice = product.salePrice.toLocaleString('ko-KR');
@@ -70,14 +89,27 @@ export function StoreProductCard({ product, onAddToCart }: StoreProductCardProps
         {/* 퀵 뷰 / 액션 버튼 호버 (데스크톱) */}
         {!isSoldOut && (
           <div className="absolute inset-x-0 bottom-3 px-3 hidden group-hover:flex items-center justify-center gap-2 transition-opacity duration-200">
-            {onAddToCart && (
+            {(onAddToCart || cartContext) && (
               <button
                 type="button"
                 onClick={handleQuickAdd}
-                className="flex-1 bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-semibold py-2 px-3 rounded-lg shadow-md hover:bg-blue-600 hover:text-white transition-colors flex items-center justify-center gap-1.5"
+                className={`flex-1 backdrop-blur-sm text-xs font-semibold py-2 px-3 rounded-lg shadow-md transition-colors flex items-center justify-center gap-1.5 ${
+                  addedFeedback
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-white/95 text-gray-800 hover:bg-blue-600 hover:text-white'
+                }`}
               >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                장바구니 담기
+                {addedFeedback ? (
+                  <>
+                    <Check className="w-3.5 h-3.5" />
+                    담김 완료!
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    장바구니 담기
+                  </>
+                )}
               </button>
             )}
             <span className="bg-white/95 backdrop-blur-sm text-gray-700 p-2 rounded-lg shadow-md hover:text-blue-600">

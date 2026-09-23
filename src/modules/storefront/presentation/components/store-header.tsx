@@ -4,15 +4,27 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ShoppingCart, Search, LayoutDashboard, Menu, X } from 'lucide-react';
+import { useCart } from '../context/cart-context';
 
 interface StoreHeaderProps {
   cartItemCount?: number;
 }
 
-export function StoreHeader({ cartItemCount = 0 }: StoreHeaderProps) {
+export function StoreHeader({ cartItemCount }: StoreHeaderProps) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // useCart 안전하게 참조 (Provider 밖 테스트에서도 안전)
+  let contextCount = 0;
+  try {
+    const cart = useCart();
+    contextCount = cart.totalItemCount;
+  } catch {
+    contextCount = 0;
+  }
+
+  const effectiveCartCount = cartItemCount !== undefined ? cartItemCount : contextCount;
 
   const categories = [
     { name: '전체', href: '/shop' },
@@ -105,9 +117,9 @@ export function StoreHeader({ cartItemCount = 0 }: StoreHeaderProps) {
               aria-label="장바구니"
             >
               <ShoppingCart className="w-5 h-5" />
-              {cartItemCount > 0 && (
+              {effectiveCartCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                  {cartItemCount > 99 ? '99+' : cartItemCount}
+                  {effectiveCartCount > 99 ? '99+' : effectiveCartCount}
                 </span>
               )}
             </Link>

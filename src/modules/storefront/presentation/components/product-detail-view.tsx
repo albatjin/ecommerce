@@ -14,11 +14,21 @@ import {
   Share2,
 } from 'lucide-react';
 
+import { useCart } from '../context/cart-context';
+
 interface ProductDetailViewProps {
   product: StoreProductDto;
 }
 
 export function ProductDetailView({ product }: ProductDetailViewProps) {
+  // useCart 안전하게 참조
+  let cartContext: ReturnType<typeof useCart> | null = null;
+  try {
+    cartContext = useCart();
+  } catch {
+    cartContext = null;
+  }
+
   // 이미지 갤러리 상태
   const allImages = [
     ...(product.imageUrl ? [product.imageUrl] : []),
@@ -46,11 +56,16 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 2500);
+    }, 3000);
   };
 
   const handleAddToCart = () => {
-    showToast(`"${product.name}" 상품 ${quantity}개가 장바구니에 담겼습니다!`);
+    if (cartContext) {
+      const res = cartContext.addItem(product, quantity);
+      showToast(res.message);
+    } else {
+      showToast(`"${product.name}" 상품 ${quantity}개가 장바구니에 담겼습니다!`);
+    }
   };
 
   const handleDirectBuy = () => {
@@ -79,9 +94,15 @@ export function ProductDetailView({ product }: ProductDetailViewProps) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* 토스트 알림 */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-2 text-sm animate-bounce">
-          <Check className="w-4 h-4 text-emerald-400" />
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 backdrop-blur-md text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 text-xs sm:text-sm border border-slate-700 animate-slide-up">
+          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{toastMessage}</span>
+          <Link
+            href="/cart"
+            className="ml-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold px-2.5 py-1 rounded-lg text-xs transition-colors shrink-0"
+          >
+            장바구니 가기
+          </Link>
         </div>
       )}
 

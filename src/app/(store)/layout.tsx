@@ -1,6 +1,7 @@
 import React from 'react';
 import { StoreHeader } from '@/modules/storefront/presentation/components/store-header';
 import { StoreFooter } from '@/modules/storefront/presentation/components/store-footer';
+import { CartProvider } from '@/modules/storefront/presentation/context/cart-context';
 
 export const metadata = {
   title: 'STOREFRONT | 프리미엄 온라인 쇼핑몰',
@@ -13,11 +14,12 @@ export default function StoreLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50/50 text-gray-900">
-      <StoreHeader />
-      <main className="flex-1">{children}</main>
-      <StoreFooter />
-    </div>
+    <CartProvider>
+      <div className="min-h-screen flex flex-col bg-gray-50/50 text-gray-900">
+        <StoreHeader />
+        <main className="flex-1">{children}</main>
+        <StoreFooter />
+      </div>
+    </CartProvider>
   );
 }
-
